@@ -30,7 +30,7 @@
 class record_and_replay_module : public RobotInterface
 {
     // a vector to store the recorded joint space trajectory
-    vector<MathLib::Vector> trajectory_;
+    std::vector<MathLib::Vector> trajectory_;
     // and integer to keep track of where we are at in the recorded trajectory
     size_t traj_ind_;
     // just an enum to keep track of what the controller is doing in its main loop
@@ -44,6 +44,8 @@ class record_and_replay_module : public RobotInterface
     RevoluteJointActuatorGroup joint_actuators_;
     // an object that we will use to generate smooth interpolated trajectories to the starting point of the recorded traj
     CDDynamics * cd_dyn_;
+    // Distance threshold for reaching the target.
+    double target_tolerance_;
 
     // just a little bool to keep track of when we start and stop a new state of the robot
     bool bFirst_;
@@ -58,13 +60,13 @@ class record_and_replay_module : public RobotInterface
 public:
             record_and_replay_module();
     virtual ~record_and_replay_module();
-  
+
     virtual Status              RobotInit();
     virtual Status              RobotFree();
-  
-    virtual Status              RobotStart();    
+
+    virtual Status              RobotStart();
     virtual Status              RobotStop();
-  
+
     virtual Status              RobotUpdate();
     virtual Status              RobotUpdateCore();
 
@@ -75,4 +77,4 @@ private:
 
 
 
-#endif 
+#endif
