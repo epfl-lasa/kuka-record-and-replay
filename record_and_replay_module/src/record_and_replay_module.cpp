@@ -1,7 +1,7 @@
 #include "record_and_replay_module.h"
 
 record_and_replay_module::record_and_replay_module()
-  :RobotInterface(){
+    :RobotInterface(){
 }
 record_and_replay_module::~record_and_replay_module(){
 }
@@ -40,8 +40,8 @@ RobotInterface::Status record_and_replay_module::RobotInit(){
   cd_dyn_->SetVelocityLimits(velLimits);
 
 
-    // finally define some commands that allows to interract with the controller via the console
-    AddConsoleCommand("gravcomp");
+  // finally define some commands that allows to interract with the controller via the console
+  AddConsoleCommand("gravcomp");
   AddConsoleCommand("record");
   AddConsoleCommand("stop");
   AddConsoleCommand("replay");
@@ -68,70 +68,70 @@ RobotInterface::Status record_and_replay_module::RobotUpdateCore(){
   // now, what we should do here depends on which state we are in..
   switch(current_state_){
     {
-    case NONE:
-      if(bFirst_)
-        bFirst_ = false;
-      // here we should just gravity compensate. Therefore, we set zero stiffness
-      lwr_robot_->SetJointStiffness(gravcomp_stiffness_);
-      // also we had better feed back the actual joint positions as targets to avoid annoying low-level kuka errors..
-      joint_actuators_.SetJointPositions(joint_sensors_.GetJointPositions());
-      break;
-    }
-    {
-    case RECORD:
-      // here we should do exactly the same except now we also record the data coming from the sensors
-      if(bFirst_){
-        trajectory_.clear();
+      case NONE:
+        if(bFirst_)
+          bFirst_ = false;
+        // here we should just gravity compensate. Therefore, we set zero stiffness
         lwr_robot_->SetJointStiffness(gravcomp_stiffness_);
-        bFirst_ = false;
-      }
-      trajectory_.push_back(joint_sensors_.GetJointPositions());
-      // also we had better feed back the actual joint positions as targets to avoid annoying low-level kuka errors..
-      joint_actuators_.SetJointPositions(joint_sensors_.GetJointPositions());
-      break;
+        // also we had better feed back the actual joint positions as targets to avoid annoying low-level kuka errors..
+        joint_actuators_.SetJointPositions(joint_sensors_.GetJointPositions());
+        break;
     }
     {
-    case PREPARE:
-      // we prepare to replay by moving smoothly to the first configuration in the recorded trajectory
-      if(bFirst_){
-        // set the target configuration for the trajectory interpolator
-        cd_dyn_->SetTarget(trajectory_[0]);
-        // initialize the trajectory interpolator with our current position
-        cd_dyn_->SetState(joint_sensors_.GetJointPositions());
-        // but now we want to move! so we need to have some stiffness..
-        lwr_robot_->SetJointStiffness(moving_stiffness_);
-        bFirst_ = false;
-      }
-      // invoke the internal update of the trajectory interpolator
-      cd_dyn_->Update();
-      // extract the current position from the trajectory interpolator
-      MathLib::Vector desired_position(7);
-      cd_dyn_->GetState(desired_position);
-      trajectory_[0].Print("target configuration");
-      desired_position.Print("desired position");
-      // .. and apply it to the robot as desired position command
-      joint_actuators_.SetJointPositions(desired_position);
-      // finally we check if we are close to the starting configuration, in
-      // which case we can switch to replaying the trajectory
-      if((joint_sensors_.GetJointPositions() - trajectory_[0]).Norm() < target_tolerance_)
-        SwitchState(REPLAY);
-      break;
+      case RECORD:
+        // here we should do exactly the same except now we also record the data coming from the sensors
+        if(bFirst_){
+          trajectory_.clear();
+          lwr_robot_->SetJointStiffness(gravcomp_stiffness_);
+          bFirst_ = false;
+        }
+        trajectory_.push_back(joint_sensors_.GetJointPositions());
+        // also we had better feed back the actual joint positions as targets to avoid annoying low-level kuka errors..
+        joint_actuators_.SetJointPositions(joint_sensors_.GetJointPositions());
+        break;
     }
     {
-    case REPLAY:
-      if(bFirst_){
-        traj_ind_ = 0;
-        bFirst_ = false;
-      }
-      // apply the desired positions and increment
-      joint_actuators_.SetJointPositions(trajectory_[traj_ind_]);
-      traj_ind_++;
-      // if we finished replaying, switch back to prepare
-      if(traj_ind_>trajectory_.size()-1){
-        SwitchState(PREPARE);
-      }
+      case PREPARE:
+        // we prepare to replay by moving smoothly to the first configuration in the recorded trajectory
+        if(bFirst_){
+          // set the target configuration for the trajectory interpolator
+          cd_dyn_->SetTarget(trajectory_[0]);
+          // initialize the trajectory interpolator with our current position
+          cd_dyn_->SetState(joint_sensors_.GetJointPositions());
+          // but now we want to move! so we need to have some stiffness..
+          lwr_robot_->SetJointStiffness(moving_stiffness_);
+          bFirst_ = false;
+        }
+        // invoke the internal update of the trajectory interpolator
+        cd_dyn_->Update();
+        // extract the current position from the trajectory interpolator
+        MathLib::Vector desired_position(7);
+        cd_dyn_->GetState(desired_position);
+        trajectory_[0].Print("target configuration");
+        desired_position.Print("desired position");
+        // .. and apply it to the robot as desired position command
+        joint_actuators_.SetJointPositions(desired_position);
+        // finally we check if we are close to the starting configuration, in
+        // which case we can switch to replaying the trajectory
+        if((joint_sensors_.GetJointPositions() - trajectory_[0]).Norm() < target_tolerance_)
+          SwitchState(REPLAY);
+        break;
+    }
+    {
+      case REPLAY:
+        if(bFirst_){
+          traj_ind_ = 0;
+          bFirst_ = false;
+        }
+        // apply the desired positions and increment
+        joint_actuators_.SetJointPositions(trajectory_[traj_ind_]);
+        traj_ind_++;
+        // if we finished replaying, switch back to prepare
+        if(traj_ind_>trajectory_.size()-1){
+          SwitchState(PREPARE);
+        }
 
-      break;
+        break;
 
     }
   }
@@ -162,7 +162,7 @@ int record_and_replay_module::RespondToConsoleCommand(const string cmd, const ve
 
 
 extern "C"{
-// These two "C" functions manage the creation and destruction of the class
+  // These two "C" functions manage the creation and destruction of the class
   record_and_replay_module* create(){return new record_and_replay_module();}
   void destroy(record_and_replay_module* module){delete module;}
 }
