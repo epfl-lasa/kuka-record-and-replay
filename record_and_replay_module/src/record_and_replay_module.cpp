@@ -1,5 +1,7 @@
 #include "record_and_replay_module.h"
 
+using namespace std;
+
 record_and_replay_module::record_and_replay_module()
     :RobotInterface(){
 }
@@ -7,6 +9,9 @@ record_and_replay_module::~record_and_replay_module(){
 }
 
 RobotInterface::Status record_and_replay_module::RobotInit(){
+
+  print("Record & Replay module::init");
+
   // initializeing the robot. This is a hack to avoid seg faults in case we run on simulation
   if(mRobot->IsSimulationMode()){
     lwr_robot_ = new LWRRobot;
@@ -107,8 +112,6 @@ RobotInterface::Status record_and_replay_module::RobotUpdateCore(){
         // extract the current position from the trajectory interpolator
         MathLib::Vector desired_position(7);
         cd_dyn_->GetState(desired_position);
-        trajectory_[0].Print("target configuration");
-        desired_position.Print("desired position");
         // .. and apply it to the robot as desired position command
         joint_actuators_.SetJointPositions(desired_position);
         // finally we check if we are close to the starting configuration, in
@@ -147,17 +150,29 @@ void record_and_replay_module::SwitchState(CurrentState next_state){
 
 int record_and_replay_module::RespondToConsoleCommand(const string cmd, const vector<string> &args){
   // here we have to define what happens when the commands defined in the Init method are issued
-  if(cmd=="gravcomp")
+  if(cmd=="gravcomp") {
+    print("In gravcomp mode.");
     SwitchState(NONE);
-  else if(cmd=="record")
+  }
+  else if(cmd=="record") {
+    print("Recording trajectory.");
     SwitchState(RECORD);
-  else if (cmd=="stop")
+  }
+  else if (cmd=="stop") {
+    print("In gravcomp mode.");
     SwitchState(NONE);
-  else if(cmd=="replay")
+  }
+  else if(cmd=="replay") {
+    print("Replaying trajectory.");
     SwitchState(PREPARE);
+  }
 
 
   return 0;
+}
+
+void record_and_replay_module::print(const char *str) {
+  this->GetConsole()->Print(str);
 }
 
 

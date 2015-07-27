@@ -71,6 +71,11 @@ class record_and_replay_module : public RobotInterface
   virtual Status              RobotUpdateCore();
 
   virtual int                 RespondToConsoleCommand(const string cmd, const vector<string> &args);
+
+  // Print a message to the console. Simple helper function to prevent having to
+  // repeat some annoyingly-long console code.
+  void print(const char *str);
+
  private:
   void SwitchState(CurrentState next_state);
 };
