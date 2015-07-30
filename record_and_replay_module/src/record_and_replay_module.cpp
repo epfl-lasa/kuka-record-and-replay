@@ -19,12 +19,11 @@ RobotInterface::Status record_and_replay_module::RobotInit(){
     lwr_robot_ = (LWRRobot*) mRobot;
     lwr_robot_->SetControlMode(Robot::CTRLMODE_JOINTIMPEDANCE);
   }
-  // set up the joint sensors
+  // Set up the joint sensors & actuators.
   joint_sensors_.SetSensorsList(lwr_robot_->GetSensors());
-  // set up the joint actuators
   joint_actuators_.SetActuatorsList(lwr_robot_->GetActuators());
 
-
+  // Gravity compensation stiffness parameters.
   gravcomp_stiffness_.Resize(7);
   gravcomp_stiffness_.Zero();
 
@@ -50,6 +49,7 @@ RobotInterface::Status record_and_replay_module::RobotInit(){
   AddConsoleCommand("record");
   AddConsoleCommand("stop");
   AddConsoleCommand("replay");
+  AddConsoleCommand("once");
   return STATUS_OK;
 }
 RobotInterface::Status record_and_replay_module::RobotFree(){
@@ -114,8 +114,9 @@ RobotInterface::Status record_and_replay_module::RobotUpdateCore(){
         cd_dyn_->GetState(desired_position);
         // .. and apply it to the robot as desired position command
         joint_actuators_.SetJointPositions(desired_position);
-        // finally we check if we are close to the starting configuration, in
-        // which case we can switch to replaying the trajectory
+
+        // Begin replaying the trajectory if the arm is close enough to the
+        // starting configuration.
         if((joint_sensors_.GetJointPositions() - trajectory_[0]).Norm() < target_tolerance_)
           SwitchState(REPLAY);
         break;
@@ -129,14 +130,20 @@ RobotInterface::Status record_and_replay_module::RobotUpdateCore(){
         // apply the desired positions and increment
         joint_actuators_.SetJointPositions(trajectory_[traj_ind_]);
         traj_ind_++;
-        // if we finished replaying, switch back to prepare
+
+        // Check if the trajectory has finished replaying.
         if(traj_ind_>trajectory_.size()-1){
-          SwitchState(PREPARE);
+
+          if (replay_once_) {  // One time only: go to gravcomp.
+            print("Finished replaying the trajectory one time. Gravcomp mode.");
+            replay_once_ = false;
+            SwitchState(NONE);
+          } else {  // Go again.
+            SwitchState(PREPARE);
+          }
         }
-
         break;
-
-    }
+    }  // case REPLAY
   }
 
   joint_actuators_.WriteActuators();
@@ -150,20 +157,19 @@ void record_and_replay_module::SwitchState(CurrentState next_state){
 
 int record_and_replay_module::RespondToConsoleCommand(const string cmd, const vector<string> &args){
   // here we have to define what happens when the commands defined in the Init method are issued
-  if(cmd=="gravcomp") {
+  if(cmd=="gravcomp" || cmd == "stop") {
     print("In gravcomp mode.");
     SwitchState(NONE);
-  }
-  else if(cmd=="record") {
+  } else if(cmd=="record") {
     print("Recording trajectory.");
     SwitchState(RECORD);
-  }
-  else if (cmd=="stop") {
-    print("In gravcomp mode.");
-    SwitchState(NONE);
-  }
-  else if(cmd=="replay") {
+  } else if(cmd=="replay") {
     print("Replaying trajectory.");
+    replay_once_ = false;
+    SwitchState(PREPARE);
+  } else if(cmd=="once") {
+    print("Replaying trajectory *once* only.");
+    replay_once_ = true;
     SwitchState(PREPARE);
   }
 

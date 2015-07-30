@@ -50,6 +50,9 @@ class record_and_replay_module : public RobotInterface
   // just a little bool to keep track of when we start and stop a new state of the robot
   bool bFirst_;
 
+  // If true, replay the trajectory once only.
+  bool replay_once_;
+
   // these are two vectors we will use to store stiffness values for gravity compensating and moving respectively
   MathLib::Vector gravcomp_stiffness_;
   MathLib::Vector moving_stiffness_;
